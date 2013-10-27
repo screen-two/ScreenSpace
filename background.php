@@ -111,7 +111,7 @@ while ($row = mysql_fetch_assoc($base_query)) {
 	}	
 	
 	//update the last tweet id and refresh_url for this search
-	$query = mysql_query(sprintf("UPDATE Saved_Search SET last_tweet_id  = '%s', refresh_url = '%s' WHERE saved_search_id = '%d'", $last_tweet_id, $refesh_url, $search_id));
+	$query = mysql_query(sprintf("UPDATE Saved_Search SET last_tweet_id  = '%s', timestamp = NOW() WHERE saved_search_id = %d", $last_tweet_id, $search_id));
 	
 	
 	//Save all of the counts (or update as needed)
