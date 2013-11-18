@@ -1,0 +1,125 @@
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=iso-8859-1">
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<title>TV to SQL</title>
+</head>
+<body>
+<script>
+	// Code from a tutorial on turning a query string into a JSON object on Developer Drive
+	function QueryStringToJSON() {            
+		var pairs = location.search.slice(1).split('&');
+		
+		var result = {};
+		pairs.forEach(function(pair) {
+			pair = pair.split('=');
+			result[pair[0]] = decodeURIComponent(pair[1] || '');
+		});
+
+		return JSON.parse(JSON.stringify(result));
+	}
+
+	var query_string = QueryStringToJSON();
+	// This function takes takes the javascript array from the RTE listings api - vizimo - and parses out the TV shows for each channel. 
+	// It uses javascript from tvg__20110503081812.js (lines 228 through 241) to parse out the TV show attributes. 
+	// We then parse the array and build up sql to update the databse with the required TV schedules. 
+	// So basically when we load this page it gives us the sql we need to run on the database.
+	$(document).ready(function () {
+		var offset = 1;
+		if(!isNaN(query_string.offset)){
+			offset = query_string.offset;
+		}
+		//Once the document is ready this posts back to the tv-schedule-loader.php with the current offset (what day from 'now' we want returned, 0 would be today, 1 tomorrow and so on)
+		$.ajax({
+			url: 'tv-schedule-loader.php?offset=' + offset,
+			// on success call this function and pass in the result
+			crossDomain: true,
+			success: function(data){
+				// Copied from tvg__20110503081812.js parses out TV shows
+				// Evaluates the data so it turns it back into javascript
+				var resp = eval(data);
+				// Creates new array
+				var channel_progs = new Array();
+				// Loops through the resp array to parse out TV schedule data
+				for (var i=0; i<resp.length; ++i) {
+					//if the TV show data is null for this station then skip
+					if ( resp [i][0] == null )
+						continue;
+					// if the station's programmes array has not been created, create a new array.
+					if ( channel_progs [resp [i][0]] == null )
+						channel_progs [resp [i][0]] = new Array ();
+					//Parse out the information for each TV show on this station
+					for (var j=0; j<resp [i][1].length; ++j) {
+						var p = new Object ();
+						p.title = resp [i][1][j][0];
+						p.start = resp [i][1][j][1];
+						p.stop = resp [i][1][j][2];
+						p.cpid = resp [i][1][j][3];
+						p.marked = resp [i][1][j][4];
+						p.watchnow = resp [i][1][j][5];
+						p.genre = resp [i][1][j][7];
+						channel_progs [resp [i][0]][channel_progs [resp [i][0]].length] = p;
+					}
+				}
+				// Grab the div#html so we can append the sql to it. 
+				var output = $('#html');
+				// For each of the station's programmes, get the station's name and build up the schedule sql for it
+				var sql = '';
+				channel_progs.forEach(function(tv_shows, station_id) {
+					var station = '';
+					// Get the station name
+					switch(station_id)
+					{
+						case 1611:
+						{
+							station = 'RTE1';
+							break;
+						}
+						case 1612:
+						{
+							station = 'RTE2';
+							break;
+						}
+						case 1692:
+						{
+							station = 'TV3';
+							break;
+						}
+						case 1678:
+						{
+							station = 'TG4';
+							break;
+						}
+					}		
+					// Go through the TV show array and build up a sql script to insert the TV schedule to the database.			
+					for (var j=0; j < tv_shows.length; ++j) {
+						var tv_show = tv_shows[j];
+						sql += "SET @tv_show_id = null;<br />";
+						sql += "INSERT INTO TV_Show ( name, hashtag, saved_search_id ) <br />";
+						// mySQL uses single quotes to represent a string so this adds an escape character to any exisitng single ticks in a TV show name. 
+						sql += "SELECT '" + tv_show.title.replace("'","\\'") + "', null, null FROM DUAL<br />";
+						// Make sure the TV show doesn't already exist, if it doesn't insert it ^^
+						sql += "WHERE NOT EXISTS (SELECT * FROM TV_Show WHERE name = '" + tv_show.title.replace("'","\\'") + "' LIMIT 1 );<br />";
+						// Get the TV show id from the databse where the name matches. 
+						sql += "SELECT tv_show_id INTO @tv_show_id FROM TV_Show WHERE name = '" + tv_show.title.replace("'","\\'") + "' LIMIT 1;<br /><br />";
+						// Get the TV station id where the name matches
+						sql += "SET @tv_station_id = null;<br /><br />";
+						sql += "SELECT tv_station_id INTO @tv_station_id FROM TV_Station WHERE name = '" + station + "' LIMIT 1;<br />";
+						// Insert the schedule using the TV show id and station id above. 
+						sql += "INSERT INTO TV_Show_Schedule ( tv_show_id, tv_station_id, start_time, stop_time )<br />";
+						sql += "SELECT @tv_show_id, @tv_station_id, '" + tv_show.start + "', '" + tv_show.stop + "' FROM DUAL<br />";
+						sql += "WHERE NOT EXISTS (SELECT * FROM TV_Show_Schedule WHERE tv_show_id = @tv_show_id AND tv_station_id =  @tv_station_id AND start_time = '" + tv_show.start + "' AND stop_time = '" + tv_show.stop + "' LIMIT 1 );<br /><br /><br /><br />";
+						
+						
+					}
+				});
+				// Append it to the output (div)
+				output.append( "<div>" + sql + "</div>" );
+			},
+			dataType: 'text'
+		});	
+	});
+</script>
+<div id="html"></div>
+</body>
+</html>

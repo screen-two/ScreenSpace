@@ -1,0 +1,27 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>TV Schedule</title>
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+	$(document).ready(function () {
+		var now = new Date();
+		
+		var date = now.getDate();
+		var month = now.getMonth() + 1; //Months are zero based
+		var year = now.getFullYear();
+		//'2013-10-29 20:00:00'
+		var timestamp = year + "-" + month + "-" + date + " 00:00:00.0";
+		
+		var url = 'http://rte.vizimo.com/ajax/programmes.htm?z=z2&channels=1611,1612,1692,1678&pkg=ie1A&offset=-1&hours=7&when='+timestamp;
+		
+		$.get(url, function(data){
+			alert(data);
+		});
+	});
+</script>
+</body>
+</html>

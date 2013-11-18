@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+<script src="./js/scripts.js"></script>
+<link rel="Stylesheet" type="text/css" href="./css/style.css" />
+<script type="text/javascript">
+	
+	
+	// Initialize the plugin with no custom options
+	//BEGIN DOCUMENT READY FUNCTION
+	$(document).ready(function () {
+				
+		// BEGIN REFRESH FUNCTIONS
+		//Beginning of the refresh funtion: This calculates the times, creates a new URL and gets the TV show data. 
+		function refresh(){
+			var url = 'http://digitalinc.ie/ScreenSpace/get-tv-shows.php'
+			//get the TV shows based on the URL
+			$.get(url, function(data){
+								
+				//clear the container and then append the TV shows to it. 		
+				$('table tbody').html(''); 
+				$(data.tv_shows).each(function(show){
+					$('table tbody').append('<tr><td class="tv-show" data-channel="' + this.station + '">'  + this.station + '</td><td class="tv-show" data-name="' + this.name + '">'  + this.name + '</td><td class="tv-show" data-hashtag="' + this.hashtag + '">'  + this.hashtag + '</td><td class="tv-show" data-start-time="' + this.start_time + '">'  + this.start_time + '</td><td class="tv-show" data-stop-time="' + this.stop_time + '">'  + this.stop_time + '</td></tr>' );
+				});
+			});
+		}
+		//get the data
+		refresh();
+		//every minute go back and get the data about the TV shows from the database...
+		setInterval(refresh, 60000); //here's where I'm setting the interval in miliseconds. 
+		// END REFRESH FUNCTIONS
+		
+		
+	
+	});
+	//END DOCUMENT READY FUNCTION	
+		  
+</script>
+<title>Screen Space Dashboard</title>
+</head>
+
+
+<body>
+
+<header>
+	<h1>Screen Space Admin Dashboard</h1>
+    <h2>Create, Read, Update, Delete information about TV shows in the Database</h2>
+</header>
+
+    <div class="content-wrapper"> 
+        
+        <table id="tv-shows-table">
+    <caption>This table displays the current shows on Irish television and their corresponding hashtags</caption>
+    <colgroup>
+        <col />
+        <col />
+        <col />
+        <col />
+        <col />
+        <col />
+    </colgroup>
+    <thead>
+        <tr>
+            <th width="22" scope="col"></th>
+            <th width="77" scope="col">Station</th>
+            <th width="97" scope="col">Programme</th>
+            <th width="92" scope="col">Hashtag</th>
+            <th width="98" scope="col">Start Time</th>
+            <th width="107" scope="col">Stop Time</th>
+        </tr>
+    </thead>
+    <tbody>
+            
+    </tbody>
+</table>
+    
+    </div><!-- END content-wrapper -->
+   
+                
+    
+    
+    
+</body>
+</html>

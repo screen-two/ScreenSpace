@@ -1,0 +1,154 @@
+	
+@import url(http://fonts.googleapis.com/css?family=Lato:300,400,700);
+
+
+#makeMeScrollable
+		  {
+			  width:100%;
+			 position: relative;
+			 background:none
+			 
+		  }
+		  
+#search_results {
+	width:9000px;
+		  position: relative; 
+		  display: inline;
+		  float:left;
+}
+.tweet {
+  float:left;
+			  width: 400px;
+			  height:300px;
+			
+			  padding-bottom:10px;
+			  display:inline;
+			  border-radius:2px;
+			  border-style:solid;
+			  border-color:#820174;
+			  
+			
+			 
+			  margin-left:10px;
+			  margin-right:40px;
+			  margin-top: 80px;
+			  padding-bottom:10px;
+}
+
+.tweet_left {
+	
+float:left;
+width:28px;
+margin:2px 4px 4px 2px;
+}
+
+.tweet_left img {
+border:2px solid #fff;
+margin-top:1px;
+}
+
+.tweet_left img:hover {
+border:2px solid #C40001;
+}
+
+.tweet_right {
+float:right;
+position:relative;
+width:400x;
+padding:2px 5px 4px;
+}
+
+.tweet_triangle {
+background:url(../../Screen_Space%20UI/css/twitter_triangle.gif) no-repeat scroll 100% 0 transparent;
+height:13px;
+left:-7px;
+position:absolute;
+top:10px;
+width:7px;
+}
+
+.tweet_row {
+Float:left
+line-height:15px;
+position:relative;
+}
+
+.tweet_name {
+font-family: 'Lato', Calibri, Arial, sans-serif;
+color:#fff;
+font-size:35px;
+font-weight:200;
+margin-top:4px;
+}
+
+.tweet_username {
+font-family: 'Lato', Calibri, Arial, sans-serif;
+color:#820174;
+font-size:30px;
+margin-top:4px;
+}
+
+.tweet_username a {
+color:#690156;
+font-size:20px;
+margin-right:4px;
+font-weight:400;
+text-decoration:none;
+}
+
+.tweet_text {
+font-size:22px;
+font-weight:300;
+color:#fff;
+line-height:26px;
+word-wrap:break-word;
+width:100%;
+margin:0 0 3px;
+padding:0;
+}
+
+.tweet_text a {
+color:#5799DB;
+text-decoration:none;
+}
+
+.tweet_timestamp,.tweet_timestamp a {
+color:#999;
+font-size:12px;
+text-decoration:none;
+float:left;
+display:inline;
+}
+
+.tweet_timestamp {
+margin-right:4px;
+}
+
+.tweet_timestamp .retweets {
+float:left;
+margin-right:6px;
+}
+
+.tweet_timestamp img {
+float:left;
+margin-left:4px;
+margin-right:3px;
+margin-top:-2px;
+}
+
+.tweet_timestamp .stream_bluebird {
+margin-left:0;
+margin-right:4px;
+}
+
+.tweet_timestamp .imageof_reply {
+margin-right:2px;
+}
+
+.tweet_timestamp .imageof_retweet {
+margin-top:-1px;
+}
+
+a:hover {
+text-decoration:underline;
+}

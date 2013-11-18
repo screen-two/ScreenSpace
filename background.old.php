@@ -1,64 +1,11 @@
 <?php
 
-//We have added background.php, this checks for the current hashtags (TV shows) and adds them to the DB, 
+//We have added background.php, this checks for the current trends and adds them to the DB, 
 //once this is done, it then loops though all of the saved searches and calculates their counts. 
-//Hashtags are now stored as saved searches (gets around loading times)
+//Trends are now stored as saved searches (gets around loading times)
 
-//background.lock keeps track of when the background script last ran, if the file hasn't been modified within a certain period of time, run it. This means that there should only ever be one script running at a time. So we can run it more frequently without worrying that too many processes are running concurrently. 
-
-//ini_set sets the error log value to 1. Then it sets the filepath we want to write the errors to. 
-//http://php.net/manual/en/function.ini-set.php
-//error_reporting sets the error loggin level to ALL. 
-
-ini_set('log_errors', 1); 
-ini_set('error_log', dirname(__FILE__) . '/error.log'); 
-error_reporting(E_ALL);
-
-// Check to see if the file (__FILE__ name of the current file execution) exists, if it does, return true. 
-// Then append it to the filepath /background.lock 
-echo "checking lock file, " . dirname(__FILE__) . '/background.lock' . "<br/>";
-$running_check = file_exists(dirname(__FILE__) . '/background.lock');
-
-// If the file exists
-if($running_check){
-	echo "lock file exists<br/>";
-	//check to see it was modified in the last 55 seconds
-	// filetime is a PHP funtion to check the time the file was last modified - file(modified)time
-	$lock_time = filemtime(dirname(__FILE__) . '/background.lock');
-	//strtotime converts a string to time
-	$check_time = strtotime("-55 seconds");
-	
-	echo "comparing lock file times $lock_time, $check_time<br/>";
-	//If the lock time is 55 seconds or more old the script probably died
-	if($lock_time < $check_time){
-		echo "updating lock file<br/>";
-		//update the lock file
-		touch(dirname(__FILE__) . '/background.lock');
-		
-		// file_put_contents is a PHP function used to write data to a file http://us1.php.net/file_put_contents
-		// Update the lock file with the text 'twitter background.php lock file' along with the date, if it 
-		// didn't work and wasn't able to write the contents to the file then die. 
-		if(file_put_contents(dirname(__FILE__) . '/background.lock', 'twitter background.php lock file ' . date("Y-m-d H:i:s", time())) === FALSE){
-			die("failed to update lock file<br/>");
-		}
-	}
-	//otherwise die. 
-	else {
-		die('Already running');
-	}
-}
-// otherwise create the lock file
-else {
-	echo "creating lock file<br/>";
-	//continue as normal after creating the file	
-	if(file_put_contents(dirname(__FILE__) . '/background.lock', 'twitter background.php lock file ' . date("Y-m-d H:i:s", time())) === FALSE){
-		die("failed to create lock file<br/>");
-	}
-}
-
-//prevents the prowser from timing out (only works on linux, this is why we're using a linux box)
 set_time_limit(60);
-
+session_start();
 require_once("twitteroauth/twitteroauth.php"); //Path to twitteroauth library, code from The Web Dev Door by Tom Elliott (http://www.webdevdoor.com/php/authenticating-twitter-feed-timeline-oauth/)
 
 //connect to the database
@@ -79,9 +26,9 @@ function getConnectionWithAccessToken($cons_key, $cons_secret, $oauth_token, $oa
  
 $connection = getConnectionWithAccessToken($consumerkey, $consumersecret, $accesstoken, $accesstokensecret);
 
-//$latitude = "53.339381";
-//$longitude = "-6.260533";
-//$radius = "1000km";
+$latitude = "53.339381";
+$longitude = "-6.260533";
+$radius = "1000km";
 
 
 $limits = $connection->get("https://api.twitter.com/1.1/application/rate_limit_status.json?resources=trends,search");
@@ -138,15 +85,7 @@ INNER JOIN Saved_Search AS saved
 $base_query = mysql_query($sql);  
 
 while ($row = mysql_fetch_assoc($base_query)) {	
-	// Update the lock file to let it know that the file has been modified
-	touch(dirname(__FILE__) . '/background.lock');
-	
 	$q = $row['hashtag'];
-	
-	if(strpos($q, '#') === 0){
-		$q = substr($q, 1);
-	}
-	
 	$search_id = $row['saved_search_id'];
 	$last_tweet_id = $row['last_tweet_id'];
 	set_time_limit(60);
@@ -167,10 +106,10 @@ while ($row = mysql_fetch_assoc($base_query)) {
 	$status = array();
 	
 	if(isset($last_tweet_id) && !empty($last_tweet_id)) {
-		$tweets = $connection->get("https://api.twitter.com/1.1/search/tweets.json?count=100&include_entities=0&since_id=" . $last_tweet_id . "&q=".$q);
+		$tweets = $connection->get("https://api.twitter.com/1.1/search/tweets.json?count=100&include_entities=0&since_id=" . $last_tweet_id . "&geocode=" . $latitude . "," . $longitude . "," . $radius . "&q=".$q);
 	}
 	else {
-		$tweets = $connection->get("https://api.twitter.com/1.1/search/tweets.json?count=100&include_entities=0&q=".$q);
+		$tweets = $connection->get("https://api.twitter.com/1.1/search/tweets.json?count=100&include_entities=0&geocode=" . $latitude . "," . $longitude . "," . $radius . "&q=".$q);
 	}
 	
 	$status = array_merge($status, $tweets->{'statuses'});
@@ -183,8 +122,7 @@ while ($row = mysql_fetch_assoc($base_query)) {
 	$refresh_url = $meta->{'refresh_url'};
 	
 	while(isset($next) && $max > 0){
-		// Update the lock file to let it know that the file has been modified
-		touch(dirname(__FILE__) . '/background.lock');
+		
 		echo "Max pages left: $max" . "<br/>";
 		$new_tweets = $connection->get("https://api.twitter.com/1.1/search/tweets.json".$next);
 		$status = array_merge($status, $new_tweets->{'statuses'});
@@ -203,7 +141,7 @@ while ($row = mysql_fetch_assoc($base_query)) {
 	}
 	
 	$counts = array();
-	// Go and get me the tweet count for the last hour use the date as the key. 
+	
 	foreach ($status as $tweet){
 		$date = date_parse( $tweet->{"created_at"} );
 		$key = $date['year'] . '-' . $date['month'] . '-' . $date['day'] . ' ' . $date['hour'] . ':00:00';
@@ -212,8 +150,6 @@ while ($row = mysql_fetch_assoc($base_query)) {
 			$counts[$key] = 0;
 			
 		$counts[$key] = $counts[$key] + 1;
-		// Update the lock file to let it know that the file has been modified
-		touch(dirname(__FILE__) . '/background.lock');
 	}	
 	
 	//echo sprintf("UPDATE Saved_Search SET last_tweet_id  = '%s', timestamp = NOW() WHERE saved_search_id = %d", $last_tweet_id, $search_id);
@@ -238,11 +174,8 @@ while ($row = mysql_fetch_assoc($base_query)) {
 			$query = mysql_query(sprintf("UPDATE Saved_Search_History SET count = count + %d WHERE saved_search_history_id = '%d'", $count, $history_id));
 		}
 	}
-	// Update the lock file to let it know that the file has been modified
-	touch(dirname(__FILE__) . '/background.lock');
 }
-//delete the lock file, when we're finished
-unlink(dirname(__FILE__) . '/background.lock');
+
 echo "completed";
 ?>
 
